@@ -30,7 +30,7 @@ void setup() {
   smooth();
 
   minim = new Minim(this);
-  in = minim.getLineIn(minim.MONO, 256);
+  in = minim.getLineIn(minim.STEREO, 256);
 
   //set up initial polyhedron
   verts = new ArrayList();
@@ -103,7 +103,7 @@ void vLine(vert v1, vert v2) {
     stroke(255);
     vCurrent.drawVert();
     stroke(255, 0, 0);
-    vert crossed = vStep.crossProduct(vCurrent);
+    vert crossed = vStep.crossProduct(vCurrent).scale(in.left.get(i)*50);
     crossed.drawVert();
     stroke(0, 255, 0);
     vert vNorm = vCurrent.add(crossed);

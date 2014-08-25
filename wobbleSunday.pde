@@ -6,6 +6,7 @@ AudioInput in;
 FFT fftLin;
 FFT fftLog;
 
+PShader blur;
 
 //some variables to hold the current polyhedron...
 float ang = 1;
@@ -19,6 +20,9 @@ boolean wobble = false;
 boolean showLined = false;
 int wobbleRatio = 75;
 float amplificationFactor = 5;
+int numberOfPasses = 1;
+int amountX = 1;
+int amountY = 1;
 
 
  float cx = 0;
@@ -32,6 +36,12 @@ void setup() {
 
   minim = new Minim(this);
   in = minim.getLineIn(minim.STEREO, 64);
+
+  blur = loadShader("blur.glsl");
+  //blur = loadShader("blur2.frag", "blur2.vert");
+  //blur.set("amountX", amountX);
+  //blur.set("amountY", amountY);
+
 
   //set up initial polyhedron
   verts = new ArrayList();
@@ -51,26 +61,17 @@ void draw() {
   rotateX(radians(mouseY)); // Rotating the sphere left & right
 
   sphere(23);
-/*
-  stroke(255, 0, 0);
-  line(0, 0, 0, 100, 0, 0);
-  stroke(0, 255, 0);
-  line(0, 0, 0, 0, 100, 0);
-  stroke(0, 0, 255);
-  line(0, 0, 0, 0, 0, 100);
-*/
-
   stroke(255);
-  for(int i=0; i<verts.size(); i++) {
-    for(int j=i + 1; j<verts.size(); j++) {
-      pushMatrix();
-      float left = in.left.get(0);
-      float right = in.right.get(0);
-      if(isEdge(i, j)) {
-        //translate(random(wobbleRatio*left), random(wobbleRatio*right),random(wobbleRatio * (left + right)));
-        vLine((vert)verts.get(i), (vert)verts.get(j));
+
+  strokeWeight(1);
+  for(int k = 0; k < numberOfPasses; k++) {
+    filter(blur);
+    for(int i=0; i<verts.size(); i++) {
+      for(int j=i + 1; j<verts.size(); j++) {
+        if(isEdge(i, j)) {
+          vLine((vert)verts.get(i), (vert)verts.get(j));
+        }
       }
-      popMatrix();
     }
   }
 
@@ -235,6 +236,14 @@ void keyPressed() {
   if(keyCode == DOWN) {
     amplificationFactor--;
     println(amplificationFactor);
+  }
+  if(keyCode == 'W') {
+    numberOfPasses++;
+    println(numberOfPasses);
+  }
+  if(keyCode == 'Q') {
+    numberOfPasses--;
+    println(numberOfPasses);
   }
 }
 

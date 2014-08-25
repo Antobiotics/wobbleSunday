@@ -18,6 +18,7 @@ int wTime = 0;
 boolean wobble = false;
 boolean showLined = false;
 int wobbleRatio = 75;
+float amplificationFactor = 5;
 
 
  float cx = 0;
@@ -30,7 +31,7 @@ void setup() {
   smooth();
 
   minim = new Minim(this);
-  in = minim.getLineIn(minim.STEREO, 256);
+  in = minim.getLineIn(minim.STEREO, 64);
 
   //set up initial polyhedron
   verts = new ArrayList();
@@ -50,16 +51,16 @@ void draw() {
   rotateX(radians(mouseY)); // Rotating the sphere left & right
 
   sphere(23);
-
+/*
   stroke(255, 0, 0);
   line(0, 0, 0, 100, 0, 0);
   stroke(0, 255, 0);
   line(0, 0, 0, 0, 100, 0);
   stroke(0, 0, 255);
   line(0, 0, 0, 0, 0, 100);
+*/
 
   stroke(255);
-
   for(int i=0; i<verts.size(); i++) {
     for(int j=i + 1; j<verts.size(); j++) {
       pushMatrix();
@@ -93,19 +94,16 @@ void vLine(vert v1, vert v2) {
 
   vert vCurrent = v1Scaled;
   vert origin = new vert(1, 1, 1);
-  stroke(0, 255, 0);
-  origin.drawVert();
   for(int i = 0; i < in.bufferSize() - 1; i++) {
+    float soundIn = in.left.get(i)*amplificationFactor;
     vert vStep = v2Scaled.sub(vCurrent).scale(dStep/32);
     vCurrent.addVert(vStep);
-    vCurrent.addScalar(in.left.get(i)*50);
+    vCurrent.addScalar(soundIn);
 
-    stroke(255);
-    vCurrent.drawVert();
     stroke(255, 0, 0);
-    vert crossed = vStep.crossProduct(vCurrent).scale(in.left.get(i)*50);
+    vert crossed = vStep.crossProduct(vCurrent).scale(soundIn);
     crossed.drawVert();
-    stroke(0, 255, 0);
+    stroke(255);
     vert vNorm = vCurrent.add(crossed);
     vNorm.drawVert();
   }
@@ -229,6 +227,14 @@ void mouseClicked() {
 void keyPressed() {
   if(keyCode == 'A') {
     showLined = !showLined;
+  }
+  if(keyCode == UP) {
+    amplificationFactor++;
+    println(amplificationFactor);
+  }
+  if(keyCode == DOWN) {
+    amplificationFactor--;
+    println(amplificationFactor);
   }
 }
 

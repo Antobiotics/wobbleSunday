@@ -1,6 +1,8 @@
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
+final float PHI = (1 + sqrt(5))/2; //a number of polys use the golden ratio...
+final float ROOT2 = sqrt(2); //...and the square root of two
 //-------------------------------------------------------------------------------
 //                                                                        GLOBALS
 //-------------------------------------------------------------------------------
@@ -19,13 +21,10 @@ float ang = 1;
 float speed = 1.5;
 
 // Vertices:
-ArrayList verts;
+ArrayList vertexArray;
 
 // Scaling:
-float dispSz, edgeLength;
-
-// Timing:
-int wTime = 0;
+float displaySize, edgeLength;
 
 // Wave Amplification:
 float amplificationFactor = 5;
@@ -43,7 +42,7 @@ void setup() {
   blur = loadShader("blur.glsl");
 
   //set up initial polyhedron
-  verts = new ArrayList();
+  vertexArray = new ArrayList();
   setupPoly();
 }
 
@@ -60,7 +59,6 @@ void draw() {
   drawPolyhedron();
 
   ang+=speed;
-  wTime++;
 }
 
 void drawPolyhedron() {
@@ -68,10 +66,10 @@ void drawPolyhedron() {
   stroke(255);
   for(int k = 0; k < numberOfPasses; k++) {
     filter(blur);
-    for(int i=0; i<verts.size(); i++) {
-      for(int j=i + 1; j<verts.size(); j++) {
+    for(int i=0; i<vertexArray.size(); i++) {
+      for(int j=i + 1; j<vertexArray.size(); j++) {
         if(isEdge(i, j)) {
-          drawLine((vert)verts.get(i), (vert)verts.get(j));
+          drawLine((vert)vertexArray.get(i), (vert)vertexArray.get(j));
         }
       }
     }
@@ -80,8 +78,8 @@ void drawPolyhedron() {
 
 void drawLine(vert v1, vert v2) {
   //Draws an edge line
-  vert v1Scaled = v1.scale(dispSz);
-  vert v2Scaled = v2.scale(dispSz);
+  vert v1Scaled = v1.scale(displaySize);
+  vert v2Scaled = v2.scale(displaySize);
   float dStep = vertDistance(v1Scaled, v2Scaled) / (float)in.bufferSize();
 
   vert vCurrent = v1Scaled;
@@ -108,35 +106,34 @@ void drawLine(vert v1, vert v2) {
 boolean isEdge(int vID1, int vID2) {
   //had some rounding errors that were messing things up, so I had to make it a bit more forgiving...
   int pres = 1000;
-  vert v1 = (vert)verts.get(vID1);
-  vert v2 = (vert)verts.get(vID2);
+  vert v1 = (vert)vertexArray.get(vID1);
+  vert v2 = (vert)vertexArray.get(vID2);
   float d = vertDistance(v1, v2) + 0.00001;
   return (int(d*pres)==int(edgeLength*pres));
-
 }
 
 //-------------------------------------------------------------------------------
 //                                                                     POLYHEDRON
 //-------------------------------------------------------------------------------
 void addVerts(float x, float y, float z) {
-  //adds the requested vert and all "mirrored" verts
-  verts.add (new vert(x, y, z));
+  //adds the requested vert and all "mirrored" vertexArray
+  vertexArray.add(new vert(x, y, z));
   if (z != 0.0) {
-    verts.add (new vert(x, y, -z));
+    vertexArray.add(new vert(x, y, -z));
   }
   if (y != 0.0) {
-    verts.add (new vert(x, -y, z));
-    if (z != 0.0) verts.add (new vert(x, -y, -z));
+    vertexArray.add(new vert(x, -y, z));
+    if (z != 0.0) vertexArray.add(new vert(x, -y, -z));
   }
   if (x != 0.0) {
-    verts.add (new vert(-x, y, z));
+    vertexArray.add(new vert(-x, y, z));
     if (z != 0.0) {
-      verts.add(new vert(-x, y, -z));
+      vertexArray.add(new vert(-x, y, -z));
     }
     if (y != 0.0) {
-      verts.add (new vert(-x, -y, z));
+      vertexArray.add(new vert(-x, -y, z));
       if (z != 0.0) { 
-        verts.add (new vert(-x, -y, -z));
+        vertexArray.add(new vert(-x, -y, -z));
       }
     }
   }
@@ -151,17 +148,13 @@ void addPermutations(float x, float y, float z) {
 
 void setupPoly() {
   //This is where the actual defining of the polyhedrons takes place
-
-  float PHI = (1 + sqrt(5))/2; //a number of polys use the golden ratio...
-  float ROOT2 = sqrt(2); //...and the square root of two
-
-  verts.clear(); //clear out whatever verts are currently defined
+  vertexArray.clear(); //clear out whatever verts are currently defined
 
   addPermutations(1, 1, pow(PHI, 3));
   addPermutations(sq(PHI), PHI, 2*PHI);
   addPermutations(PHI + 2, 0, sq(PHI));
   edgeLength = 2;
-  dispSz = 50;
+  displaySize = 50;
 }
 //-------------------------------------------------------------------------------
 //                                                                    INTERACTION
@@ -169,11 +162,6 @@ void setupPoly() {
 void handleInteraction() {
   rotateY(radians(mouseX)); // Rotating the sphere up & down
   rotateX(radians(mouseY)); // Rotating the sphere left & right
-}
-
-void mouseClicked() {
-   setupPoly();
-   wTime = 0;
 }
 
 void keyPressed() {

@@ -31,7 +31,7 @@ int wTime = 0;
 float amplificationFactor = 5;
 
 //-------------------------------------------------------------------------------
-//
+//                                                                 INITIALISATION
 //-------------------------------------------------------------------------------
 void setup() {
   size(700, 450, P3D);
@@ -48,7 +48,7 @@ void setup() {
 }
 
 //-------------------------------------------------------------------------------
-//
+//                                                                          DRAWS
 //-------------------------------------------------------------------------------
 void draw() {
   //setup the view
@@ -62,17 +62,7 @@ void draw() {
   ang+=speed;
   wTime++;
 }
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void handleInteraction() {
-  rotateY(radians(mouseX)); // Rotating the sphere up & down
-  rotateX(radians(mouseY)); // Rotating the sphere left & right
-}
 
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
 void drawPolyhedron() {
   strokeWeight(.75);
   stroke(255);
@@ -81,17 +71,14 @@ void drawPolyhedron() {
     for(int i=0; i<verts.size(); i++) {
       for(int j=i + 1; j<verts.size(); j++) {
         if(isEdge(i, j)) {
-          vLine((vert)verts.get(i), (vert)verts.get(j));
+          drawLine((vert)verts.get(i), (vert)verts.get(j));
         }
       }
     }
   }
 }
 
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void vLine(vert v1, vert v2) {
+void drawLine(vert v1, vert v2) {
   //Draws an edge line
   vert v1Scaled = v1.scale(dispSz);
   vert v2Scaled = v2.scale(dispSz);
@@ -114,22 +101,103 @@ void vLine(vert v1, vert v2) {
   }
 }
 
-
 //-------------------------------------------------------------------------------
-//
+//                                                                           DRAW
+//                                                                      UTILITIES
 //-------------------------------------------------------------------------------
 boolean isEdge(int vID1, int vID2) {
   //had some rounding errors that were messing things up, so I had to make it a bit more forgiving...
   int pres = 1000;
   vert v1 = (vert)verts.get(vID1);
   vert v2 = (vert)verts.get(vID2);
-  float d = sqrt(sq(v1.x - v2.x) + sq(v1.y - v2.y) + sq(v1.z - v2.z)) + .00001;
+  float d = vertDistance(v1, v2) + 0.00001;
   return (int(d*pres)==int(edgeLength*pres));
 
 }
 
 //-------------------------------------------------------------------------------
-//
+//                                                                     POLYHEDRON
+//-------------------------------------------------------------------------------
+void addVerts(float x, float y, float z) {
+  //adds the requested vert and all "mirrored" verts
+  verts.add (new vert(x, y, z));
+  if (z != 0.0) {
+    verts.add (new vert(x, y, -z));
+  }
+  if (y != 0.0) {
+    verts.add (new vert(x, -y, z));
+    if (z != 0.0) verts.add (new vert(x, -y, -z));
+  }
+  if (x != 0.0) {
+    verts.add (new vert(-x, y, z));
+    if (z != 0.0) {
+      verts.add(new vert(-x, y, -z));
+    }
+    if (y != 0.0) {
+      verts.add (new vert(-x, -y, z));
+      if (z != 0.0) { 
+        verts.add (new vert(-x, -y, -z));
+      }
+    }
+  }
+}
+
+void addPermutations(float x, float y, float z) {
+  //adds vertices for all three permutations of x, y, and z
+  addVerts(x, y, z);
+  addVerts(z, x, y);
+  addVerts(y, z, x);
+}
+
+void setupPoly() {
+  //This is where the actual defining of the polyhedrons takes place
+
+  float PHI = (1 + sqrt(5))/2; //a number of polys use the golden ratio...
+  float ROOT2 = sqrt(2); //...and the square root of two
+
+  verts.clear(); //clear out whatever verts are currently defined
+
+  addPermutations(1, 1, pow(PHI, 3));
+  addPermutations(sq(PHI), PHI, 2*PHI);
+  addPermutations(PHI + 2, 0, sq(PHI));
+  edgeLength = 2;
+  dispSz = 50;
+}
+//-------------------------------------------------------------------------------
+//                                                                    INTERACTION
+//-------------------------------------------------------------------------------
+void handleInteraction() {
+  rotateY(radians(mouseX)); // Rotating the sphere up & down
+  rotateX(radians(mouseY)); // Rotating the sphere left & right
+}
+
+void mouseClicked() {
+   setupPoly();
+   wTime = 0;
+}
+
+void keyPressed() {
+  if(keyCode == UP) {
+    amplificationFactor++;
+    println(amplificationFactor);
+  }
+  if(keyCode == DOWN) {
+    amplificationFactor--;
+    println(amplificationFactor);
+  }
+  if(keyCode == 'W') {
+    numberOfPasses++;
+    println(numberOfPasses);
+  }
+  if(keyCode == 'Q') {
+    numberOfPasses--;
+    println(numberOfPasses);
+  }
+}
+
+//-------------------------------------------------------------------------------
+//                                                                       VERTICES
+//                                                                          CLASS
 //-------------------------------------------------------------------------------
 class vert {
   //simple vertex class to hold the numbers
@@ -184,83 +252,3 @@ float vertDistance(vert v1, vert v2) {
 vert randomVert(float factor) {
   return(new vert(random(factor), random(factor), random(factor)));
 }
-
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void addVerts(float x, float y, float z) {
-  //adds the requested vert and all "mirrored" verts
-  verts.add (new vert(x, y, z));
-  if (z != 0.0) verts.add (new vert(x, y, -z));
-  if (y != 0.0) {
-    verts.add (new vert(x, -y, z));
-    if (z != 0.0) verts.add (new vert(x, -y, -z));
-  }
-  if (x != 0.0) {
-    verts.add (new vert(-x, y, z));
-    if (z != 0.0) verts.add(new vert(-x, y, -z));
-    if (y != 0.0) {
-      verts.add (new vert(-x, -y, z));
-      if (z != 0.0) verts.add (new vert(-x, -y, -z));
-    }
-  }
-}
-
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void addPermutations(float x, float y, float z) {
-  //adds vertices for all three permutations of x, y, and z
-  addVerts(x, y, z);
-  addVerts(z, x, y);
-  addVerts(y, z, x);
-}
-
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void setupPoly() {
-  //This is where the actual defining of the polyhedrons takes place
-
-  float PHI = (1 + sqrt(5))/2; //a number of polys use the golden ratio...
-  float ROOT2 = sqrt(2); //...and the square root of two
-
-  verts.clear(); //clear out whatever verts are currently defined
-
-  addPermutations(1, 1, pow(PHI, 3));
-  addPermutations(sq(PHI), PHI, 2*PHI);
-  addPermutations(PHI + 2, 0, sq(PHI));
-  edgeLength = 2;
-  dispSz = 50;
-}
-
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void mouseClicked() {
-   setupPoly();
-   wTime = 0;
-}
-
-//-------------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------------
-void keyPressed() {
-  if(keyCode == UP) {
-    amplificationFactor++;
-    println(amplificationFactor);
-  }
-  if(keyCode == DOWN) {
-    amplificationFactor--;
-    println(amplificationFactor);
-  }
-  if(keyCode == 'W') {
-    numberOfPasses++;
-    println(numberOfPasses);
-  }
-  if(keyCode == 'Q') {
-    numberOfPasses--;
-    println(numberOfPasses);
-  }
-}
-

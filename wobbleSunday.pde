@@ -1,33 +1,34 @@
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
+//-------------------------------------------------------------------------------
+//                                                                        GLOBALS
+//-------------------------------------------------------------------------------
+// Audio:
 Minim minim;
 AudioInput in;
 FFT fftLin;
 FFT fftLog;
 
+// Effects:
 PShader blur;
+int numberOfPasses = 1;
 
-//some variables to hold the current polyhedron...
+// Rotation:
 float ang = 1;
 float speed = 1.5;
+
+// Vertices:
 ArrayList verts;
+
+// Scaling:
 float dispSz, edgeLength;
-String strName, strNotes;
-int currID = 14;
+
+// Timing:
 int wTime = 0;
-boolean wobble = false;
-boolean showLined = false;
-int wobbleRatio = 75;
+
+// Wave Amplification:
 float amplificationFactor = 5;
-int numberOfPasses = 1;
-int amountX = 1;
-int amountY = 1;
-
-
-float cx = 0;
-float cy = 0;
-float cz = 0;
 
 //-------------------------------------------------------------------------------
 //
@@ -40,10 +41,6 @@ void setup() {
   in = minim.getLineIn(minim.STEREO, 64);
 
   blur = loadShader("blur.glsl");
-  //blur = loadShader("blur2.frag", "blur2.vert");
-  //blur.set("amountX", amountX);
-  //blur.set("amountY", amountY);
-
 
   //set up initial polyhedron
   verts = new ArrayList();
@@ -58,16 +55,27 @@ void draw() {
   background(0);
   translate(width/2, height/2, -200);
 
-  //draw the polyhedron
-  strokeWeight(.75);
-  stroke(255);
+  handleInteraction();
+
+  drawPolyhedron();
+
+  ang+=speed;
+  wTime++;
+}
+//-------------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------------
+void handleInteraction() {
   rotateY(radians(mouseX)); // Rotating the sphere up & down
   rotateX(radians(mouseY)); // Rotating the sphere left & right
+}
 
-  sphere(23);
+//-------------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------------
+void drawPolyhedron() {
+  strokeWeight(.75);
   stroke(255);
-
-  strokeWeight(1);
   for(int k = 0; k < numberOfPasses; k++) {
     filter(blur);
     for(int i=0; i<verts.size(); i++) {
@@ -78,13 +86,6 @@ void draw() {
       }
     }
   }
-
-  ang+=speed;
-  wTime++;
-  if(wTime > 100) {
-     wobble = false;
-  }
-
 }
 
 //-------------------------------------------------------------------------------
@@ -92,9 +93,6 @@ void draw() {
 //-------------------------------------------------------------------------------
 void vLine(vert v1, vert v2) {
   //Draws an edge line
-  if(showLined) {
-    line(v1.x*dispSz, v1.y*dispSz, v1.z*dispSz, v2.x*dispSz, v2.y*dispSz, v2.z*dispSz);
-  }
   vert v1Scaled = v1.scale(dispSz);
   vert v2Scaled = v2.scale(dispSz);
   float dStep = vertDistance(v1Scaled, v2Scaled) / (float)in.bufferSize();
@@ -116,12 +114,6 @@ void vLine(vert v1, vert v2) {
   }
 }
 
-float vertDistance(vert v1, vert v2) {
-  float dxsq = (v1.x - v2.x) * (v1.x - v2.x);
-  float dysq = (v1.y - v2.y) * (v1.y - v2.y);
-  float dzsq = (v1.z - v2.z) * (v1.z - v2.z);
-  return sqrt(dxsq + dysq + dzsq);
-}
 
 //-------------------------------------------------------------------------------
 //
@@ -134,10 +126,6 @@ boolean isEdge(int vID1, int vID2) {
   float d = sqrt(sq(v1.x - v2.x) + sq(v1.y - v2.y) + sq(v1.z - v2.z)) + .00001;
   return (int(d*pres)==int(edgeLength*pres));
 
-}
-
-vert randomVert(float factor) {
-  return(new vert(random(factor), random(factor), random(factor)));
 }
 
 //-------------------------------------------------------------------------------
@@ -184,6 +172,17 @@ class vert {
     this.y += v.y;
     this.z += v.z;
   }
+}
+
+float vertDistance(vert v1, vert v2) {
+  float dxsq = (v1.x - v2.x) * (v1.x - v2.x);
+  float dysq = (v1.y - v2.y) * (v1.y - v2.y);
+  float dzsq = (v1.z - v2.z) * (v1.z - v2.z);
+  return sqrt(dxsq + dysq + dzsq);
+}
+
+vert randomVert(float factor) {
+  return(new vert(random(factor), random(factor), random(factor)));
 }
 
 //-------------------------------------------------------------------------------
@@ -240,7 +239,6 @@ void setupPoly() {
 //-------------------------------------------------------------------------------
 void mouseClicked() {
    setupPoly();
-   wobble = !wobble;
    wTime = 0;
 }
 
@@ -248,9 +246,6 @@ void mouseClicked() {
 //
 //-------------------------------------------------------------------------------
 void keyPressed() {
-  if(keyCode == 'A') {
-    showLined = !showLined;
-  }
   if(keyCode == UP) {
     amplificationFactor++;
     println(amplificationFactor);

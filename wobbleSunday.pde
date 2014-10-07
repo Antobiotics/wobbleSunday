@@ -1,3 +1,10 @@
+import java.awt.*;
+
+// OPenCV
+import gab.opencv.*;
+import processing.video.*;
+
+// Audio
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
@@ -11,6 +18,16 @@ Minim minim;
 AudioInput in;
 FFT fftLin;
 FFT fftLog;
+
+// Video Capture:
+Capture video;
+PImage buffer;
+OpenCV opencv;
+
+// Contours
+ArrayList<Contour> contours;
+ArrayList<Contour> polygons;
+int threshold = 81;
 
 // Effects:
 PShader blur;
@@ -36,14 +53,28 @@ void setup() {
   size(700, 450, P3D);
   smooth();
 
-  minim = new Minim(this);
-  in = minim.getLineIn(minim.STEREO, 64);
-
   blur = loadShader("blur.glsl");
 
-  //set up initial polyhedron
-  vertexArray = new ArrayList();
+  setupMinim();
+  setupVideo();
+  setupOpenCV();
   setupPoly();
+
+}
+
+void setupMinim() {
+  minim = new Minim(this);
+  in = minim.getLineIn(minim.STEREO, 64);
+}
+
+void setupVideo() {
+  video  = new Capture(this, width/2, height/2);
+  buffer = new Capture(this, width/2, height/2);
+  video.start();
+}
+
+void setupOpenCV() {
+  opencv = new OpenCV(this, width/2, height/2);
 }
 
 //-------------------------------------------------------------------------------
@@ -51,14 +82,44 @@ void setup() {
 //-------------------------------------------------------------------------------
 void draw() {
   //setup the view
-  background(0);
+  background(0); // TODO: If amplitude hight enough switch off background cleanup
   translate(width/2, height/2, -200);
+
 
   handleInteraction();
 
+  updateVideo();
+  drawContours();
   drawPolyhedron();
 
   ang+=speed;
+}
+
+void updateVideo() {
+  opencv.loadImage(video);
+  opencv.gray();
+  opencv.threshold(threshold);
+  buffer = opencv.getOutput();
+  contours = opencv.findContours();
+}
+
+void drawVideo() {
+  image(buffer, 0, 0);
+}
+
+void drawContours() {
+  strokeWeight(3);
+  for(Contour c: contours) {
+    stroke(0, 255, 0);
+    c.draw();
+
+    stroke(255, 0, 0);
+    beginShape();
+    for(PVector point : c.getPolygonApproximation().getPoints()) {
+      vertex(point.x, point.y);
+    }
+    endShape();
+  }
 }
 
 void drawPolyhedron() {
@@ -147,6 +208,8 @@ void addPermutations(float x, float y, float z) {
 }
 
 void setupPoly() {
+
+  vertexArray = new ArrayList();
   //This is where the actual defining of the polyhedrons takes place
   vertexArray.clear(); //clear out whatever verts are currently defined
 
@@ -181,8 +244,20 @@ void keyPressed() {
     numberOfPasses--;
     println(numberOfPasses);
   }
+  if(keyCode == 'J') {
+    threshold++;
+    println(threshold);
+  }
+
+  if(keyCode == 'K') {
+    threshold--;
+    println(threshold);
+  }
 }
 
+void captureEvent(Capture c) {
+  c.read();
+}
 //-------------------------------------------------------------------------------
 //                                                                       VERTICES
 //                                                                          CLASS

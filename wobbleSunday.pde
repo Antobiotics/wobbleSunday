@@ -32,7 +32,7 @@ OpenCV opencv;
 ArrayList<Contour> contours;
 ArrayList<Contour> polygons;
 int threshold = 81;
-
+float appFactor = 0;
 // Effects:
 PShader blur;
 int numberOfPasses = 1;
@@ -43,7 +43,7 @@ float speed = 1.5;
 
 // Vertices:
 ArrayList vertexArray;
-
+ArrayList meshVertexArray;
 // Scaling:
 float displaySize, edgeLength;
 
@@ -95,7 +95,7 @@ void draw() {
 
   scale(2);
   drawContours();
-  drawPolyhedron();
+  drawMesh();
   
   ang+=speed;
 }
@@ -116,8 +116,8 @@ void drawContours() {
   strokeWeight(3);
   for(Contour c: contours) {
     stroke(0, 255, 0);
-    c.draw();
-
+    c.getConvexHull().draw();
+    c.setPolygonApproximationFactor(appFactor);
     stroke(255, 0, 0);
     beginShape();
     for(PVector point : c.getPolygonApproximation().getPoints()) {
@@ -127,7 +127,7 @@ void drawContours() {
   }
 }
 
-void drawPolyhedron() {
+void drawMesh() {
   translate(width/2, height/2, -200);
   strokeWeight(.75);
   stroke(255);
@@ -238,27 +238,42 @@ void keyPressed() {
     amplificationFactor++;
     println(amplificationFactor);
   }
+
   if(keyCode == DOWN) {
     amplificationFactor--;
     println(amplificationFactor);
   }
+
   if(keyCode == 'W') {
     numberOfPasses++;
     println(numberOfPasses);
   }
+
   if(keyCode == 'Q') {
     numberOfPasses--;
     println(numberOfPasses);
   }
-  if(keyCode == 'J') {
+
+  if(keyCode == 'K') {
     threshold++;
     println(threshold);
   }
 
-  if(keyCode == 'K') {
+  if(keyCode == 'J') {
     threshold--;
     println(threshold);
   }
+
+  if(keyCode == 'M') {
+    appFactor++;
+    println(appFactor);
+  }
+
+  if(keyCode == 'N') {
+    appFactor--;
+    println(appFactor);
+  }
+
 }
 
 void captureEvent(Capture c) {

@@ -8,8 +8,12 @@ import processing.video.*;
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
+//-------------------------------------------------------------------------------
+//                                                                      CONSTANTS
+//-------------------------------------------------------------------------------
 final float PHI = (1 + sqrt(5))/2; //a number of polys use the golden ratio...
 final float ROOT2 = sqrt(2); //...and the square root of two
+
 //-------------------------------------------------------------------------------
 //                                                                        GLOBALS
 //-------------------------------------------------------------------------------
@@ -50,7 +54,7 @@ float amplificationFactor = 5;
 //                                                                 INITIALISATION
 //-------------------------------------------------------------------------------
 void setup() {
-  size(700, 450, P3D);
+  size(640, 480, P3D);
   smooth();
 
   blur = loadShader("blur.glsl");
@@ -60,6 +64,7 @@ void setup() {
   setupOpenCV();
   setupPoly();
 
+  video.start();
 }
 
 void setupMinim() {
@@ -70,7 +75,6 @@ void setupMinim() {
 void setupVideo() {
   video  = new Capture(this, width/2, height/2);
   buffer = new Capture(this, width/2, height/2);
-  video.start();
 }
 
 void setupOpenCV() {
@@ -83,15 +87,16 @@ void setupOpenCV() {
 void draw() {
   //setup the view
   background(0); // TODO: If amplitude hight enough switch off background cleanup
-  translate(width/2, height/2, -200);
-
 
   handleInteraction();
 
   updateVideo();
+  drawVideo();
+
+  scale(2);
   drawContours();
   drawPolyhedron();
-
+  
   ang+=speed;
 }
 
@@ -123,6 +128,7 @@ void drawContours() {
 }
 
 void drawPolyhedron() {
+  translate(width/2, height/2, -200);
   strokeWeight(.75);
   stroke(255);
   for(int k = 0; k < numberOfPasses; k++) {

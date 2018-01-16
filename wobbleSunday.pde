@@ -14,7 +14,7 @@ FFT fftLog;
 
 // Effects:
 PShader blur;
-int numberOfPasses = 1;
+int numberOfPasses = 7;
 
 // Rotation:
 float ang = 1;
